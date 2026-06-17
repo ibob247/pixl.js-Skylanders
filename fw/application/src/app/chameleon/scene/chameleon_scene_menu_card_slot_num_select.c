@@ -36,6 +36,7 @@ void chameleon_scene_menu_card_slot_num_select_on_enter(void *user_data) {
     mui_list_view_add_item_ext(app->p_list_view, ICON_DATA, "8", NULL, (void *)8);
     mui_list_view_add_item_ext(app->p_list_view, ICON_DATA, "20", NULL, (void *)20);
     mui_list_view_add_item_ext(app->p_list_view, ICON_DATA, "50", NULL, (void *)50);
+    mui_list_view_add_item_ext(app->p_list_view, ICON_DATA, "99", NULL, (void *)99);
 
     mui_list_view_add_item(app->p_list_view, ICON_BACK, _T(MAIN_RETURN), NULL_USER_DATA);
 
@@ -48,7 +49,9 @@ void chameleon_scene_menu_card_slot_num_select_on_enter(void *user_data) {
         mui_list_view_set_focus(app->p_list_view, 1);
     } else if (settings->chameleon_slot_num == 50) {
         mui_list_view_set_focus(app->p_list_view, 2);
-    }else{
+    } else if (settings->chameleon_slot_num == 99) {
+        mui_list_view_set_focus(app->p_list_view, 3);
+    } else {
         mui_list_view_set_focus(app->p_list_view, 0);
     }
     mui_list_view_set_scroll_offset(app->p_list_view, 0);
