@@ -167,6 +167,21 @@ void tag_helper_apply_switch_mode_sak(void) {
 }
 
 void tag_helper_load_coll_res_from_block0_with_switch_mode(void) {
+    settings_data_t *settings = settings_get_data();
+
+    tag_specific_type_t tag_type = tag_helper_get_active_tag_type();
+    tag_group_type_t tag_group_type = tag_helper_get_tag_group_type(tag_type);
+
+    if (tag_group_type == TAG_GROUP_MIFARE) {
+        if (settings->chameleon_switch_mode) {
+            // Switch mode = old Custom Mode ON internally.
+            nfc_tag_mf1_set_use_mf1_coll_res(false);
+        } else {
+            // Normal console mode = old Custom Mode OFF internally.
+            nfc_tag_mf1_set_use_mf1_coll_res(true);
+        }
+    }
+
     tag_helper_load_coll_res_from_block0();
     tag_helper_apply_switch_mode_sak();
 }
