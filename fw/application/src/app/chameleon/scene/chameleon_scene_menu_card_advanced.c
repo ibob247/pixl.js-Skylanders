@@ -135,6 +135,11 @@ void chameleon_scene_menu_card_advanced_reload(app_chameleon_t *app) {
     if (tag_group == TAG_GROUP_MIFARE) {
         mui_list_view_add_item_ext(app->p_list_view, ICON_VIEW, _T(APP_CHAMELEON_CARD_ADV_CUSTOM_MODE),
                                    (nfc_tag_mf1_is_use_mf1_coll_res() ? _T(OFF_F) : _T(ON_F)), CHAMELEON_MENU_CUSTOM);
+    
+        mui_list_view_add_item_ext(app->p_list_view, ICON_PAGE, "Switch Mode",
+                                   (settings->chameleon_switch_mode ? _T(ON_F) : _T(OFF_F)),
+                                   CHAMELEON_MENU_SWITCH_MODE);
+    
         if (!nfc_tag_mf1_is_use_mf1_coll_res()) {
             mui_list_view_add_item(app->p_list_view, ICON_DATA, _T(APP_CHAMELEON_CARD_ADV_LOAD_BLOCK0),
                                    CHAMELEON_MENU_LOAD_BLOCK0);
