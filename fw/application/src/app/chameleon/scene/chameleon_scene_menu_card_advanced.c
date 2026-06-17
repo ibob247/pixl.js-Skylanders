@@ -46,14 +46,6 @@ void chameleon_scene_menu_card_advanced_on_event(mui_list_view_event_t event, mu
         settings->chameleon_switch_mode = !settings->chameleon_switch_mode;
         settings_save();
     
-        if (settings->chameleon_switch_mode) {
-            // Switch mode = old Custom Mode ON internally + SAK 08.
-            nfc_tag_mf1_set_use_mf1_coll_res(false);
-        } else {
-            // Normal console mode = old Custom Mode OFF internally + SAK 81.
-            nfc_tag_mf1_set_use_mf1_coll_res(true);
-        }
-    
         tag_helper_load_coll_res_from_block0_with_switch_mode();
     
         chameleon_scene_menu_card_advanced_reload(app);
@@ -144,13 +136,8 @@ void chameleon_scene_menu_card_advanced_reload(app_chameleon_t *app) {
         mui_list_view_add_item_ext(app->p_list_view, ICON_PAGE, "Switch Mode",
                                    (settings->chameleon_switch_mode ? _T(ON_F) : _T(OFF_F)),
                                    CHAMELEON_MENU_SWITCH_MODE);
-    
-        if (settings->chameleon_switch_mode) {
-            mui_list_view_add_item(app->p_list_view, ICON_DATA, _T(APP_CHAMELEON_CARD_ADV_LOAD_BLOCK0),
-                                   CHAMELEON_MENU_LOAD_BLOCK0);
-        }
     }
-
+    
     sprintf(buff, "[%d %s]", *(coll_res->size), _T(BYTES));
     mui_list_view_add_item_ext(app->p_list_view, ICON_DATA, _T(APP_CHAMELEON_CARD_ID_SIZE), buff,
                                CHAMELEON_MENU_UID_SIZE);
