@@ -141,7 +141,10 @@ void tag_helper_load_coll_res_from_block0() {
 void tag_helper_apply_switch_mode_sak(void) {
     settings_data_t *settings = settings_get_data();
 
-    if (!settings->chameleon_switch_mode) {
+    tag_specific_type_t tag_type = tag_helper_get_active_tag_type();
+    tag_group_type_t tag_group_type = tag_helper_get_tag_group_type(tag_type);
+
+    if (tag_group_type != TAG_GROUP_MIFARE) {
         return;
     }
 
@@ -151,7 +154,11 @@ void tag_helper_apply_switch_mode_sak(void) {
         return;
     }
 
-    coll_res->sak[0] = 0x08;
+    if (settings->chameleon_switch_mode) {
+        coll_res->sak[0] = 0x08;
+    } else {
+        coll_res->sak[0] = 0x81;
+    }
 }
 
 void tag_helper_load_coll_res_from_block0_with_switch_mode(void) {
