@@ -28,12 +28,12 @@ typedef struct {
     bool qrcode_enabled;
     Language language;
     uint8_t amiidb_data_slot_num;
-    bool chameleon_switch_mode; // force SAK 0x08 for Switch/Skylanders mode
     uint8_t chameleon_default_slot_index;
     uint16_t app_enable_bits; // bitmask for app enable status (1: enabled, 0: disabled)
     uint8_t amiidb_sort_column;
     uint8_t chameleon_slot_num; // chameleon available slot count (8-99)
     ble_amiibolink_mode_t amiibolink_mode; // user's preferred AmiiboLink mode (0 = not set, use default)
+    bool chameleon_switch_mode; // force SAK 0x08 for Switch/Skylanders mode
 } settings_data_t;
 
 int32_t settings_init();
