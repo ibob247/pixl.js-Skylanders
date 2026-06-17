@@ -154,6 +154,11 @@ void tag_helper_apply_switch_mode_sak(void) {
         return;
     }
 
+    // Skylanders ATQA should always be 0F 01.
+    // Pixl.js displays ATQA as atqa[1], atqa[0].
+    coll_res->atqa[0] = 0x01;
+    coll_res->atqa[1] = 0x0F;
+
     if (settings->chameleon_switch_mode) {
         coll_res->sak[0] = 0x08;
     } else {
