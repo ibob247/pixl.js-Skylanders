@@ -28,6 +28,7 @@ typedef struct {
     bool qrcode_enabled;
     Language language;
     uint8_t amiidb_data_slot_num;
+    bool chameleon_switch_mode; // force SAK 0x08 for Switch/Skylanders mode
     uint8_t chameleon_default_slot_index;
     uint16_t app_enable_bits; // bitmask for app enable status (1: enabled, 0: disabled)
     uint8_t amiidb_sort_column;
