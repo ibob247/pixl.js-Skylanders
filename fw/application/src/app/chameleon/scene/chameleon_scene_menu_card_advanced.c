@@ -42,7 +42,7 @@ void chameleon_scene_menu_card_advanced_on_event(mui_list_view_event_t event, mu
 
     case CHAMELEON_MENU_LOAD_BLOCK0: {
         if (!nfc_tag_mf1_is_use_mf1_coll_res()) {
-            tag_helper_load_coll_res_from_block0();
+            tag_helper_load_coll_res_from_block0_with_switch_mode();
             mui_toast_view_show(app->p_toast_view, _T(APP_CHAMELEON_CARD_ADV_LOAD_BLOCK0_SUCCESS));
         }
         chameleon_scene_menu_card_advanced_reload(app);
