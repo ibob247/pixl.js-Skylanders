@@ -16,6 +16,7 @@
 
 typedef enum {
     CHAMELEON_MENU_CUSTOM,
+    CHAMELEON_MENU_SWITCH_MODE,
     CHAMELEON_MENU_LOAD_BLOCK0,
     CHAMELEON_MENU_UID_SIZE,
     CHAMELEON_MENU_UID,
@@ -40,6 +41,17 @@ void chameleon_scene_menu_card_advanced_on_event(mui_list_view_event_t event, mu
         break;
     }
 
+    case CHAMELEON_MENU_SWITCH_MODE: {
+    settings_data_t *settings = settings_get_data();
+    settings->chameleon_switch_mode = !settings->chameleon_switch_mode;
+    settings_save();
+
+    tag_helper_load_coll_res_from_block0_with_switch_mode();
+
+    chameleon_scene_menu_card_advanced_reload(app);
+    break;
+    }
+        
     case CHAMELEON_MENU_LOAD_BLOCK0: {
         if (!nfc_tag_mf1_is_use_mf1_coll_res()) {
             tag_helper_load_coll_res_from_block0_with_switch_mode();
@@ -118,6 +130,7 @@ void chameleon_scene_menu_card_advanced_reload(app_chameleon_t *app) {
     tag_group_type_t tag_group = tag_helper_get_tag_group_type(tag_type);
     const tag_specific_type_name_t *tag_name = tag_helper_get_tag_type_name(tag_type);
     const nfc_tag_14a_coll_res_reference_t *coll_res = tag_helper_get_active_coll_res_ref();
+    settings_data_t *settings = settings_get_data();
 
     if (tag_group == TAG_GROUP_MIFARE) {
         mui_list_view_add_item_ext(app->p_list_view, ICON_VIEW, _T(APP_CHAMELEON_CARD_ADV_CUSTOM_MODE),
