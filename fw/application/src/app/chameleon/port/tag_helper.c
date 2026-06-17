@@ -138,6 +138,27 @@ void tag_helper_load_coll_res_from_block0() {
     }
 }
 
+void tag_helper_apply_switch_mode_sak(void) {
+    settings_data_t *settings = settings_get_data();
+
+    if (!settings->chameleon_switch_mode) {
+        return;
+    }
+
+    nfc_tag_14a_coll_res_reference_t *coll_res = tag_helper_get_active_coll_res_ref();
+
+    if (coll_res == NULL) {
+        return;
+    }
+
+    coll_res->sak[0] = 0x08;
+}
+
+void tag_helper_load_coll_res_from_block0_with_switch_mode(void) {
+    tag_helper_load_coll_res_from_block0();
+    tag_helper_apply_switch_mode_sak();
+}
+
     tag_specific_type_t tag_helper_get_active_tag_type() {
         tag_specific_type_t tag_type[2];
         uint8_t slot = tag_emulation_get_slot();
