@@ -33,6 +33,11 @@ void chameleon_scene_menu_card_advanced_on_event(mui_list_view_event_t event, mu
                                                  mui_list_item_t *p_item) {
     app_chameleon_t *app = p_list_view->user_data;
     chameleon_menu_item_t item = (chameleon_menu_item_t)p_item->user_data;
+
+    if (event != MUI_LIST_VIEW_EVENT_SELECTED) {
+        return;
+    }
+
     switch (item) {
 
     case CHAMELEON_MENU_CUSTOM: {
