@@ -35,8 +35,8 @@ const settings_data_t def_settings_data = {.backlight = 0,
                                             .app_enable_bits = 0xFFFF,
                                             .amiidb_sort_column = 0,
                                             .chameleon_slot_num = 8,
-                                            .chameleon_switch_mode = false,
                                             .amiibolink_mode = 0, // 0 = not set, use default (manual)
+                                            .chameleon_switch_mode = false,
                                         };
 
 settings_data_t m_settings_data = {0};
