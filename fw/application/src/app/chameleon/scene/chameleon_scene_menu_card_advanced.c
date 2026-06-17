@@ -42,14 +42,14 @@ void chameleon_scene_menu_card_advanced_on_event(mui_list_view_event_t event, mu
     }
 
     case CHAMELEON_MENU_SWITCH_MODE: {
-    settings_data_t *settings = settings_get_data();
-    settings->chameleon_switch_mode = !settings->chameleon_switch_mode;
-    settings_save();
-
-    tag_helper_load_coll_res_from_block0_with_switch_mode();
-
-    chameleon_scene_menu_card_advanced_reload(app);
-    break;
+        settings_data_t *settings = settings_get_data();
+        settings->chameleon_switch_mode = !settings->chameleon_switch_mode;
+        settings_save();
+    
+        tag_helper_load_coll_res_from_block0_with_switch_mode();
+    
+        chameleon_scene_menu_card_advanced_reload(app);
+        break;
     }
         
     case CHAMELEON_MENU_LOAD_BLOCK0: {
