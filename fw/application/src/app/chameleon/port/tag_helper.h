@@ -45,4 +45,7 @@ bool tag_helper_valid_default_slot();
 
 void tag_helper_set_slot_num(uint8_t slot_num);
 
+void tag_helper_apply_switch_mode_sak(void);
+void tag_helper_load_coll_res_from_block0_with_switch_mode(void);
+
 #endif
