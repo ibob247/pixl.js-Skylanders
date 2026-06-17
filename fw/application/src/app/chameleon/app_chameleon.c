@@ -63,6 +63,7 @@ void app_chameleon_on_run(mini_app_inst_t *p_app_inst) {
 
     // init emulation
     tag_emulation_init();
+    tag_helper_load_coll_res_from_block0_with_switch_mode();
 
     if (!fds_config_file_exists()) {
         mui_scene_dispatcher_next_scene(p_app_handle->p_scene_dispatcher, CHAMELEON_SCENE_FACTORY);
