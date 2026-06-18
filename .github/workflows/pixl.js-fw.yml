@@ -21,22 +21,125 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          submodules: 'true'
-
-      - name: Patch ChameleonUltra slot limit
-        run: |
-          sed -i 's/#define TAG_MAX_SLOT_NUM[[:space:]]*50/#define TAG_MAX_SLOT_NUM    99/' fw/components/chameleon-ultra/firmware/application/src/rfid/nfctag/tag_emulation.h
-          sed -i 's/#define TAG_SLOT_CONFIG_CURRENT_VERSION[[:space:]]*8/#define TAG_SLOT_CONFIG_CURRENT_VERSION 9/' fw/components/chameleon-ultra/firmware/application/src/rfid/nfctag/tag_emulation.h
-          sed -i 's/#define TAG_SLOT_CONFIG_CURRENT_SIZE 8\*50+4/#define TAG_SLOT_CONFIG_CURRENT_SIZE 8*99+4/' fw/components/chameleon-ultra/firmware/application/src/rfid/nfctag/tag_emulation.h
-
-          sed -i '/#include "tag_persistence.h"/a #include "tag_emulation.h"\n#include "app_error.h"' fw/components/chameleon-ultra/firmware/application/src/rfid/nfctag/tag_persistence.c
-          sed -i 's/(sense_type == TAG_SENSE_NO) || (slot > 7)/(sense_type == TAG_SENSE_NO) || (slot >= TAG_MAX_SLOT_NUM)/' fw/components/chameleon-ultra/firmware/application/src/rfid/nfctag/tag_persistence.c
-
-          grep -n "TAG_MAX_SLOT_NUM\|TAG_SLOT_CONFIG_CURRENT_VERSION\|TAG_SLOT_CONFIG_CURRENT_SIZE" fw/components/chameleon-ultra/firmware/application/src/rfid/nfctag/tag_emulation.h
-          grep -n "tag_emulation.h\|app_error.h\|TAG_MAX_SLOT_NUM\|slot > 7" fw/components/chameleon-ultra/firmware/application/src/rfid/nfctag/tag_persistence.c
+          submodules: recursive
 
       - name: Change Owner of Container Working Directory
-        run: chown root:root .
+        run: chown -R root:root .
+
+      - name: Patch pixl.js RAM settings
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          import re
+
+          makefile = Path("fw/application/Makefile")
+          text = makefile.read_text()
+
+          text = re.sub(
+              r"pixljs: CFLAGS \+= -D__HEAP_SIZE=\d+",
+              "pixljs: CFLAGS += -D__HEAP_SIZE=2048",
+              text,
+          )
+          text = re.sub(
+              r"pixljs: CFLAGS \+= -D__STACK_SIZE=\d+",
+              "pixljs: CFLAGS += -D__STACK_SIZE=8192",
+              text,
+          )
+          text = re.sub(
+              r"pixljs: ASMFLAGS \+= -D__HEAP_SIZE=\d+",
+              "pixljs: ASMFLAGS += -D__HEAP_SIZE=2048",
+              text,
+          )
+          text = re.sub(
+              r"pixljs: ASMFLAGS \+= -D__STACK_SIZE=\d+",
+              "pixljs: ASMFLAGS += -D__STACK_SIZE=8192",
+              text,
+          )
+
+          makefile.write_text(text)
+
+          sdk_config = Path("fw/application/config/sdk_config.h")
+          text = sdk_config.read_text()
+          text = re.sub(
+              r"#define NRF_LOG_ENABLED\s+\d+",
+              "#define NRF_LOG_ENABLED 0",
+              text,
+          )
+          sdk_config.write_text(text)
+          PY
+
+          grep -n "__HEAP_SIZE\|__STACK_SIZE" fw/application/Makefile
+          grep -n "#define NRF_LOG_ENABLED" fw/application/config/sdk_config.h
+
+      - name: Patch ChameleonUltra for 99 slots
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          import re
+
+          tag_emulation = Path("fw/components/chameleon-ultra/firmware/application/src/rfid/nfctag/tag_emulation.h")
+          tag_persistence = Path("fw/components/chameleon-ultra/firmware/application/src/rfid/nfctag/tag_persistence.c")
+
+          if not tag_emulation.exists():
+              raise SystemExit(f"Missing file: {tag_emulation}")
+
+          if not tag_persistence.exists():
+              raise SystemExit(f"Missing file: {tag_persistence}")
+
+          text = tag_emulation.read_text()
+
+          text = re.sub(
+              r"#define\s+TAG_MAX_SLOT_NUM\s+\d+",
+              "#define TAG_MAX_SLOT_NUM    99",
+              text,
+          )
+          text = re.sub(
+              r"#define\s+TAG_SLOT_CONFIG_CURRENT_VERSION\s+\d+",
+              "#define TAG_SLOT_CONFIG_CURRENT_VERSION 9",
+              text,
+          )
+          text = re.sub(
+              r"#define\s+TAG_SLOT_CONFIG_CURRENT_SIZE\s+.*",
+              "#define TAG_SLOT_CONFIG_CURRENT_SIZE 8*99+4",
+              text,
+          )
+
+          tag_emulation.write_text(text)
+
+          text = tag_persistence.read_text()
+
+          if '#include "tag_emulation.h"' not in text:
+              text = text.replace(
+                  '#include "tag_persistence.h"\n',
+                  '#include "tag_persistence.h"\n#include "tag_emulation.h"\n',
+                  1,
+              )
+
+          if '#include "app_error.h"' not in text:
+              if '#include "fds_ids.h"\n' in text:
+                  text = text.replace(
+                      '#include "fds_ids.h"\n',
+                      '#include "fds_ids.h"\n#include "app_error.h"\n',
+                      1,
+                  )
+              else:
+                  text = text.replace(
+                      '#include "tag_persistence.h"\n',
+                      '#include "tag_persistence.h"\n#include "app_error.h"\n',
+                      1,
+                  )
+
+          text = re.sub(
+              r"\(sense_type\s*==\s*TAG_SENSE_NO\)\s*\|\|\s*\(slot\s*>\s*\d+\)",
+              "(sense_type == TAG_SENSE_NO) || (slot >= TAG_MAX_SLOT_NUM)",
+              text,
+          )
+
+          tag_persistence.write_text(text)
+          PY
+
+          grep -n "TAG_MAX_SLOT_NUM\|TAG_SLOT_CONFIG_CURRENT_VERSION\|TAG_SLOT_CONFIG_CURRENT_SIZE" fw/components/chameleon-ultra/firmware/application/src/rfid/nfctag/tag_emulation.h
+          grep -n "tag_emulation.h\|app_error.h\|TAG_MAX_SLOT_NUM\|slot >" fw/components/chameleon-ultra/firmware/application/src/rfid/nfctag/tag_persistence.c
 
       - name: Build firmware
         run: cd fw && make all RELEASE=1 APP_VERSION=$GITHUB_RUN_NUMBER BOARD=${{ matrix.board }}
