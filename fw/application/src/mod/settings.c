@@ -34,7 +34,7 @@ const settings_data_t def_settings_data = {.backlight = 0,
                                            .chameleon_default_slot_index = INVALID_SLOT_INDEX,
                                             .app_enable_bits = 0xFFFF,
                                             .amiidb_sort_column = 0,
-                                            .chameleon_slot_num = 8,
+                                            .chameleon_slot_num = 99,
                                             .amiibolink_mode = 0, // 0 = not set, use default (manual)
                                             .chameleon_switch_mode = false,
                                         };
@@ -75,7 +75,7 @@ static void validate_settings() {
     INT8_VALIDATE(m_settings_data.language, 0, LANGUAGE_COUNT - 1, LANGUAGE_EN_US);
     INT8_VALIDATE(m_settings_data.amiidb_data_slot_num, 1, 100, 20);
     BOOL_VALIDATE(m_settings_data.chameleon_switch_mode, 0);
-    INT8_VALIDATE(m_settings_data.chameleon_slot_num, 8, 99, 8);
+    INT8_VALIDATE(m_settings_data.chameleon_slot_num, 8, 99, 99);
     INT8_VALIDATE(m_settings_data.chameleon_default_slot_index, 0, m_settings_data.chameleon_slot_num, INVALID_SLOT_INDEX);
     
     // Validate amiibolink_mode: 0 = not set, 1-4 are valid modes
@@ -123,16 +123,24 @@ int32_t settings_save() {
     }
 
     settings_data_t old_settings_data;
-
+    memset(&old_settings_data, 0, sizeof(old_settings_data));
+    
     err = p_driver->read_file_data(SETTINGS_FILE_NAME, &old_settings_data, sizeof(settings_data_t));
+    
     bool not_found = false;
+    bool size_mismatch = false;
+    
     if (err == VFS_ERR_NOOBJ) {
         not_found = true;
     } else if (err < 0) {
         return NRF_ERROR_INVALID_STATE;
+    } else if (err != sizeof(settings_data_t)) {
+        size_mismatch = true;
     }
-
-    if (not_found || memcmp(&m_settings_data, &old_settings_data, sizeof(settings_data_t)) != 0) {
+    
+    validate_settings();
+    
+    if (not_found || size_mismatch || memcmp(&m_settings_data, &old_settings_data, sizeof(settings_data_t)) != 0) {
         err = p_driver->write_file_data(SETTINGS_FILE_NAME, &m_settings_data, sizeof(settings_data_t));
         if (err < 0) {
             return NRF_ERROR_INVALID_STATE;
