@@ -53,7 +53,7 @@ void chameleon_scene_menu_card_slot_on_enter(void *user_data) {
     sprintf(buff, "[%0d]", settings->chameleon_slot_num);
     mui_list_view_add_item_ext(app->p_list_view, ICON_VIEW, _T(APP_CHAMELEON_CARD_SLOT_NUM), buff,
                                (void *)CHAMELEON_MENU_BACK_EXIT);
-    for (uint32_t i = 0; i < settings->chameleon_slot_num; i++) {
+    for (uint32_t i = 0; i < settings->chameleon_slot_num && i < TAG_MAX_SLOT_NUM; i++) {
         sprintf(buff, "%s %02d", _T(APP_CHAMELEON_CARD_SLOT), i + 1);
         mui_list_view_add_item_ext(app->p_list_view, ICON_DATA, buff,
                                    tag_emulation_slot_is_enabled(i, TAG_SENSE_HF) ? _T(ON_F) : _T(OFF_F),
