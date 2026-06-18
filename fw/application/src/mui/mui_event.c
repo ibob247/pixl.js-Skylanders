@@ -12,7 +12,7 @@ void mui_event_set_callback(mui_event_queue_t *p_queue, mui_event_handler_t disp
 
 void mui_event_post(mui_event_queue_t *p_queue, mui_event_t *p_event) {
     // CRTIAL_ENTER
-    if (!mui_event_deque_size(p_queue->event_deque) > MAX_EVENT_MSG) {
+    if (mui_event_deque_size(p_queue->event_deque) >= MAX_EVENT_MSG) {
         NRF_LOG_WARNING("event buffer is FULL!!");
         return;
     }
