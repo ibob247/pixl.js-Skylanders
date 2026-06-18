@@ -14,8 +14,6 @@
 #include "mui_icons.h"
 #include "tag_helper.h"
 
-#include "settings.h"
-
 #define CHAMELEON_MENU_BACK_EXIT 0
 #define CHAMELEON_MENU_BACK_MAIN 1
 #define CHAMELEON_MENU_MODE 2
