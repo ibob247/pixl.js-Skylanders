@@ -3,7 +3,7 @@
 
 #include "mui_common.h"
 
-#define MAX_EVENT_MSG 64
+#define MAX_EVENT_MSG 8
 
 
 typedef struct {
