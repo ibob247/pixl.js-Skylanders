@@ -168,7 +168,7 @@ jobs:
           grep -n "mui_event_deque_size" fw/application/src/mui/mui_event.c
           grep -n "MAX_EVENT_MSG" fw/application/src/mui/mui_event.h
 
-      - name: Patch settings persistence and event queue
+      - name: Patch settings persistence
         run: |
           python3 - <<'PY'
           from pathlib import Path
@@ -219,34 +219,18 @@ jobs:
 
           if (not_found || size_mismatch || memcmp(&m_settings_data, &old_settings_data, sizeof(settings_data_t)) != 0) {'''
 
-          if old not in text:
-              raise SystemExit("settings_save block not found")
-          text = text.replace(old, new)
+          if old in text:
+              text = text.replace(old, new)
+          elif "size_mismatch" in text and "validate_settings();" in text:
+              print("settings_save already patched")
+          else:
+              raise SystemExit("settings_save block not recognized")
 
           settings_c.write_text(text)
-
-          event_c = Path("fw/application/src/mui/mui_event.c")
-          text = event_c.read_text()
-          text = text.replace(
-              "if (!mui_event_deque_size(p_queue->event_deque) > MAX_EVENT_MSG) {",
-              "if (mui_event_deque_size(p_queue->event_deque) >= MAX_EVENT_MSG) {",
-          )
-          event_c.write_text(text)
-
-          event_h = Path("fw/application/src/mui/mui_event.h")
-          text = event_h.read_text()
-          text = re.sub(
-              r"#define\s+MAX_EVENT_MSG\s+\d+",
-              "#define MAX_EVENT_MSG 8",
-              text,
-          )
-          event_h.write_text(text)
           PY
 
           grep -n "chameleon_slot_num" fw/application/src/mod/settings.c
           grep -n "size_mismatch\|validate_settings" fw/application/src/mod/settings.c
-          grep -n "mui_event_deque_size" fw/application/src/mui/mui_event.c
-          grep -n "MAX_EVENT_MSG" fw/application/src/mui/mui_event.h
 
       - name: Build firmware
         run: cd fw && make all RELEASE=1 APP_VERSION=$GITHUB_RUN_NUMBER BOARD=${{ matrix.board }}
