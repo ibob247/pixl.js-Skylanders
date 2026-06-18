@@ -20,11 +20,12 @@ jobs:
     - uses: actions/checkout@v4
       with:
         submodules: 'true'
-    - name: Use Skylanders ChameleonUltra fork
+    - name: Patch ChameleonUltra slot limit
       run: |
-        rm -rf fw/components/chameleon-ultra
-        git clone --depth 1 --recursive https://github.com/ibob247/ChameleonUltra.git fw/components/chameleon-ultra
-
+        sed -i 's/#define TAG_MAX_SLOT_NUM[[:space:]]*50/#define TAG_MAX_SLOT_NUM    99/' fw/components/chameleon-ultra/firmware/application/src/rfid/nfctag/tag_emulation.h
+        sed -i 's/#define TAG_SLOT_CONFIG_CURRENT_VERSION[[:space:]]*8/#define TAG_SLOT_CONFIG_CURRENT_VERSION 9/' fw/components/chameleon-ultra/firmware/application/src/rfid/nfctag/tag_emulation.h
+        sed -i 's/#define TAG_SLOT_CONFIG_CURRENT_SIZE 8\*50+4/#define TAG_SLOT_CONFIG_CURRENT_SIZE 8*99+4/' fw/components/chameleon-ultra/firmware/application/src/rfid/nfctag/tag_emulation.h
+        grep -n "TAG_MAX_SLOT_NUM\|TAG_SLOT_CONFIG_CURRENT_VERSION\|TAG_SLOT_CONFIG_CURRENT_SIZE" fw/components/chameleon-ultra/firmware/application/src/rfid/nfctag/tag_emulation.h
     - name: Change Owner of Container Working Directory
       run: chown root:root .
 
