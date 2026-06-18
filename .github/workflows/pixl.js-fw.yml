@@ -2,47 +2,62 @@ name: pixl.js-fw
 
 on:
   push:
-    branches: [ "main", "develop", "neo_v2"]
-    tags:  ["*"]
+    branches: [ "main", "develop", "neo_v2" ]
+    tags: [ "*" ]
   pull_request:
-    types: ["opened"]
-    branches: ["develop"]
+    types: [ "opened" ]
+    branches: [ "develop" ]
   workflow_dispatch:
 
 jobs:
   build:
     strategy:
       matrix:
-        board: ["LCD", "OLED"]
+        board: [ "LCD", "OLED" ]
+
     runs-on: ubuntu-latest
     container: solosky/nrf52-sdk:latest
-    steps:
-    - uses: actions/checkout@v4
-      with:
-        submodules: 'true'
-    - name: Patch ChameleonUltra slot limit
-      run: |
-        sed -i 's/#define TAG_MAX_SLOT_NUM[[:space:]]*50/#define TAG_MAX_SLOT_NUM    99/' fw/components/chameleon-ultra/firmware/application/src/rfid/nfctag/tag_emulation.h
-        sed -i 's/#define TAG_SLOT_CONFIG_CURRENT_VERSION[[:space:]]*8/#define TAG_SLOT_CONFIG_CURRENT_VERSION 9/' fw/components/chameleon-ultra/firmware/application/src/rfid/nfctag/tag_emulation.h
-        sed -i 's/#define TAG_SLOT_CONFIG_CURRENT_SIZE 8\*50+4/#define TAG_SLOT_CONFIG_CURRENT_SIZE 8*99+4/' fw/components/chameleon-ultra/firmware/application/src/rfid/nfctag/tag_emulation.h
-        grep -n "TAG_MAX_SLOT_NUM\|TAG_SLOT_CONFIG_CURRENT_VERSION\|TAG_SLOT_CONFIG_CURRENT_SIZE" fw/components/chameleon-ultra/firmware/application/src/rfid/nfctag/tag_emulation.h
-    - name: Change Owner of Container Working Directory
-      run: chown root:root .
 
-    - name: Change Owner of Container Working Directory
-      run: chown root:root .
-    - name: build firmware
-      run: cd fw && make all RELEASE=1 APP_VERSION=$GITHUB_RUN_NUMBER BOARD=${{matrix.board}}
-    - name: copy artifact
-      run: mv fw/_build/bootloader.hex . && mv fw/_build/pixljs.hex . && mv fw/_build/pixljs_all.hex . && mv fw/_build/pixjs_ota_v${{github.run_number}}.zip . && mv fw/docs/fw_readme.txt . && mv  fw/scripts/fw_update.bat .
-    - name: upload artifact
-      uses: actions/upload-artifact@v4
-      with:
-        name: pixljs_fw_${{matrix.board}}
-        path: |
-          bootloader.hex
-          pixljs.hex
-          pixljs_all.hex
-          pixjs_ota_v${{github.run_number}}.zip
-          fw_readme.txt
-          fw_update.bat
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: 'true'
+
+      - name: Patch ChameleonUltra slot limit
+        run: |
+          sed -i 's/#define TAG_MAX_SLOT_NUM[[:space:]]*50/#define TAG_MAX_SLOT_NUM    99/' fw/components/chameleon-ultra/firmware/application/src/rfid/nfctag/tag_emulation.h
+          sed -i 's/#define TAG_SLOT_CONFIG_CURRENT_VERSION[[:space:]]*8/#define TAG_SLOT_CONFIG_CURRENT_VERSION 9/' fw/components/chameleon-ultra/firmware/application/src/rfid/nfctag/tag_emulation.h
+          sed -i 's/#define TAG_SLOT_CONFIG_CURRENT_SIZE 8\*50+4/#define TAG_SLOT_CONFIG_CURRENT_SIZE 8*99+4/' fw/components/chameleon-ultra/firmware/application/src/rfid/nfctag/tag_emulation.h
+
+          sed -i '/#include "tag_persistence.h"/a #include "tag_emulation.h"\n#include "app_error.h"' fw/components/chameleon-ultra/firmware/application/src/rfid/nfctag/tag_persistence.c
+          sed -i 's/(sense_type == TAG_SENSE_NO) || (slot > 7)/(sense_type == TAG_SENSE_NO) || (slot >= TAG_MAX_SLOT_NUM)/' fw/components/chameleon-ultra/firmware/application/src/rfid/nfctag/tag_persistence.c
+
+          grep -n "TAG_MAX_SLOT_NUM\|TAG_SLOT_CONFIG_CURRENT_VERSION\|TAG_SLOT_CONFIG_CURRENT_SIZE" fw/components/chameleon-ultra/firmware/application/src/rfid/nfctag/tag_emulation.h
+          grep -n "tag_emulation.h\|app_error.h\|TAG_MAX_SLOT_NUM\|slot > 7" fw/components/chameleon-ultra/firmware/application/src/rfid/nfctag/tag_persistence.c
+
+      - name: Change Owner of Container Working Directory
+        run: chown root:root .
+
+      - name: Build firmware
+        run: cd fw && make all RELEASE=1 APP_VERSION=$GITHUB_RUN_NUMBER BOARD=${{ matrix.board }}
+
+      - name: Copy artifact
+        run: |
+          mv fw/_build/bootloader.hex .
+          mv fw/_build/pixljs.hex .
+          mv fw/_build/pixljs_all.hex .
+          mv fw/_build/pixjs_ota_v${{ github.run_number }}.zip .
+          mv fw/docs/fw_readme.txt .
+          mv fw/scripts/fw_update.bat .
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: pixljs_fw_${{ matrix.board }}
+          path: |
+            bootloader.hex
+            pixljs.hex
+            pixljs_all.hex
+            pixjs_ota_v${{ github.run_number }}.zip
+            fw_readme.txt
+            fw_update.bat
