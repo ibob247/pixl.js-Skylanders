@@ -75,9 +75,10 @@ void app_chameleon_on_run(mini_app_inst_t *p_app_inst) {
 void app_chameleon_on_kill(mini_app_inst_t *p_app_inst) {
     app_chameleon_t *p_app_handle = p_app_inst->p_handle;
 
-    app_chameleon_retain_data_t *p_retain = (app_chameleon_retain_data_t *)p_app_inst->p_retain_data;
-
-    p_retain->cycle_mode_index = chameleon_view_get_index(p_app_handle->p_chameleon_view);
+    if (p_app_inst->p_retain_data) {
+        app_chameleon_retain_data_t *p_retain = (app_chameleon_retain_data_t *)p_app_inst->p_retain_data;
+        p_retain->cycle_mode_index = chameleon_view_get_index(p_app_handle->p_chameleon_view);
+    }
 
     settings_data_t *settings = settings_get_data();
     if (tag_helper_valid_default_slot() &&
