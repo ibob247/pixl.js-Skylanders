@@ -16,5 +16,6 @@ extern const xbm_t app_ble_transfer_32x32;
 extern const xbm_t app_card_emulator_32x32;
 extern const xbm_t app_game_32x32;
 extern const xbm_t app_settings_32x32;
+extern const xbm_t status_logo_12x12;
 
 #endif

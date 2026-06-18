@@ -119,4 +119,14 @@ const uint8_t app_settings_32x32_data[] = {
 const xbm_t app_settings_32x32 = {.width = 32, .height = 32, .data = app_settings_32x32_data};
 
 
+//************************************************************************
+//** /resources/bmp/status_logo_12x12.bmp
+//************************************************************************
+const uint8_t status_logo_12x12_data[] = {
+0x60,0x00,0xf0,0x00,0xf0,0x00,0xf2,0x04,0x07,0x0e,0x0f,0x0f,0x00,0x00,0x0e,
+0x07,0x06,0x06,0x00,0x00,0x60,0x00,0x60,0x00
+};
+const xbm_t status_logo_12x12 = {.width = 12, .height = 12, .data = status_logo_12x12_data};
+
+
 
