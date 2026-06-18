@@ -141,6 +141,33 @@ jobs:
           grep -n "TAG_MAX_SLOT_NUM\|TAG_SLOT_CONFIG_CURRENT_VERSION\|TAG_SLOT_CONFIG_CURRENT_SIZE" fw/components/chameleon-ultra/firmware/application/src/rfid/nfctag/tag_emulation.h
           grep -n "tag_emulation.h\|app_error.h\|TAG_MAX_SLOT_NUM\|slot >" fw/components/chameleon-ultra/firmware/application/src/rfid/nfctag/tag_persistence.c
 
+      - name: Patch MUI event queue backlog
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          import re
+
+          event_c = Path("fw/application/src/mui/mui_event.c")
+          text = event_c.read_text()
+          text = text.replace(
+              "if (!mui_event_deque_size(p_queue->event_deque) > MAX_EVENT_MSG) {",
+              "if (mui_event_deque_size(p_queue->event_deque) >= MAX_EVENT_MSG) {",
+          )
+          event_c.write_text(text)
+
+          event_h = Path("fw/application/src/mui/mui_event.h")
+          text = event_h.read_text()
+          text = re.sub(
+              r"#define\s+MAX_EVENT_MSG\s+\d+",
+              "#define MAX_EVENT_MSG 8",
+              text,
+          )
+          event_h.write_text(text)
+          PY
+
+          grep -n "mui_event_deque_size" fw/application/src/mui/mui_event.c
+          grep -n "MAX_EVENT_MSG" fw/application/src/mui/mui_event.h
+
       - name: Build firmware
         run: cd fw && make all RELEASE=1 APP_VERSION=$GITHUB_RUN_NUMBER BOARD=${{ matrix.board }}
 
