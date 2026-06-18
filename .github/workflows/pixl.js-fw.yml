@@ -20,6 +20,13 @@ jobs:
     - uses: actions/checkout@v4
       with:
         submodules: 'true'
+    - name: Use Skylanders ChameleonUltra fork
+      run: |
+        rm -rf fw/components/chameleon-ultra
+        git clone --depth 1 --recursive https://github.com/ibob247/ChameleonUltra.git fw/components/chameleon-ultra
+
+    - name: Change Owner of Container Working Directory
+      run: chown root:root .
 
     - name: Change Owner of Container Working Directory
       run: chown root:root .
