@@ -168,6 +168,86 @@ jobs:
           grep -n "mui_event_deque_size" fw/application/src/mui/mui_event.c
           grep -n "MAX_EVENT_MSG" fw/application/src/mui/mui_event.h
 
+      - name: Patch settings persistence and event queue
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          import re
+
+          settings_c = Path("fw/application/src/mod/settings.c")
+          text = settings_c.read_text()
+
+          text = text.replace(
+              ".chameleon_slot_num = 8,",
+              ".chameleon_slot_num = 99,",
+          )
+
+          text = text.replace(
+              "INT8_VALIDATE(m_settings_data.chameleon_slot_num, 8, 99, 8);",
+              "INT8_VALIDATE(m_settings_data.chameleon_slot_num, 8, 99, 99);",
+          )
+
+          old = '''settings_data_t old_settings_data;
+
+          err = p_driver->read_file_data(SETTINGS_FILE_NAME, &old_settings_data, sizeof(settings_data_t));
+          bool not_found = false;
+          if (err == VFS_ERR_NOOBJ) {
+              not_found = true;
+          } else if (err < 0) {
+              return NRF_ERROR_INVALID_STATE;
+          }
+
+          if (not_found || memcmp(&m_settings_data, &old_settings_data, sizeof(settings_data_t)) != 0) {'''
+
+          new = '''settings_data_t old_settings_data;
+          memset(&old_settings_data, 0, sizeof(old_settings_data));
+
+          err = p_driver->read_file_data(SETTINGS_FILE_NAME, &old_settings_data, sizeof(settings_data_t));
+
+          bool not_found = false;
+          bool size_mismatch = false;
+
+          if (err == VFS_ERR_NOOBJ) {
+              not_found = true;
+          } else if (err < 0) {
+              return NRF_ERROR_INVALID_STATE;
+          } else if (err != sizeof(settings_data_t)) {
+              size_mismatch = true;
+          }
+
+          validate_settings();
+
+          if (not_found || size_mismatch || memcmp(&m_settings_data, &old_settings_data, sizeof(settings_data_t)) != 0) {'''
+
+          if old not in text:
+              raise SystemExit("settings_save block not found")
+          text = text.replace(old, new)
+
+          settings_c.write_text(text)
+
+          event_c = Path("fw/application/src/mui/mui_event.c")
+          text = event_c.read_text()
+          text = text.replace(
+              "if (!mui_event_deque_size(p_queue->event_deque) > MAX_EVENT_MSG) {",
+              "if (mui_event_deque_size(p_queue->event_deque) >= MAX_EVENT_MSG) {",
+          )
+          event_c.write_text(text)
+
+          event_h = Path("fw/application/src/mui/mui_event.h")
+          text = event_h.read_text()
+          text = re.sub(
+              r"#define\s+MAX_EVENT_MSG\s+\d+",
+              "#define MAX_EVENT_MSG 8",
+              text,
+          )
+          event_h.write_text(text)
+          PY
+
+          grep -n "chameleon_slot_num" fw/application/src/mod/settings.c
+          grep -n "size_mismatch\|validate_settings" fw/application/src/mod/settings.c
+          grep -n "mui_event_deque_size" fw/application/src/mui/mui_event.c
+          grep -n "MAX_EVENT_MSG" fw/application/src/mui/mui_event.h
+
       - name: Build firmware
         run: cd fw && make all RELEASE=1 APP_VERSION=$GITHUB_RUN_NUMBER BOARD=${{ matrix.board }}
 
