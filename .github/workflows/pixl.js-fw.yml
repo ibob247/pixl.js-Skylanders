@@ -232,6 +232,88 @@ jobs:
           grep -n "chameleon_slot_num" fw/application/src/mod/settings.c
           grep -n "size_mismatch\|validate_settings" fw/application/src/mod/settings.c
 
+      - name: Patch Card Emulator empty-slot cleanup
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+
+          # Expose fds_is_exists() to tag_helper.c
+          fds_h = Path("fw/application/src/app/chameleon/port/fds_utils.h")
+          text = fds_h.read_text()
+          if "bool fds_is_exists(uint16_t id, uint16_t key);" not in text:
+              text = text.replace(
+                  "bool fds_config_file_exists();",
+                  "bool fds_config_file_exists();\nbool fds_is_exists(uint16_t id, uint16_t key);",
+              )
+          fds_h.write_text(text)
+
+          # Add helper that disables enabled HF slots that do not actually have dump files
+          tag_helper_c = Path("fw/application/src/app/chameleon/port/tag_helper.c")
+          text = tag_helper_c.read_text()
+
+          helper_func = r'''
+          void tag_helper_disable_empty_slots(void) {
+              settings_data_t *settings = settings_get_data();
+              uint8_t max_slots = settings->chameleon_slot_num;
+
+              if (max_slots > TAG_MAX_SLOT_NUM) {
+                  max_slots = TAG_MAX_SLOT_NUM;
+              }
+
+              bool changed = false;
+
+              for (uint8_t i = 0; i < max_slots; i++) {
+                  if (tag_emulation_slot_is_enabled(i, TAG_SENSE_HF) &&
+                      !fds_is_exists(FDS_SLOT_TAG_DUMP_FILE_ID_BASE + i, TAG_SENSE_HF)) {
+                      tag_emulation_slot_set_enable(i, TAG_SENSE_HF, false);
+                      changed = true;
+                  }
+              }
+
+              if (changed) {
+                  tag_emulation_save();
+              }
+          }
+          '''
+
+          if "void tag_helper_disable_empty_slots(void)" not in text:
+              insert_before = "void tag_helper_set_slot_num(uint8_t slot_num)"
+              text = text.replace(insert_before, helper_func + "\n" + insert_before)
+
+          tag_helper_c.write_text(text)
+
+          # Declare helper
+          tag_helper_h = Path("fw/application/src/app/chameleon/port/tag_helper.h")
+          text = tag_helper_h.read_text()
+          if "void tag_helper_disable_empty_slots(void);" not in text:
+              text = text.replace(
+                  "void tag_helper_set_slot_num(uint8_t slot_num);",
+                  "void tag_helper_set_slot_num(uint8_t slot_num);\nvoid tag_helper_disable_empty_slots(void);",
+              )
+          tag_helper_h.write_text(text)
+
+          # Call helper when Card Emulator starts
+          app_c = Path("fw/application/src/app/chameleon/app_chameleon.c")
+          text = app_c.read_text()
+          old = '''    // init emulation
+              tag_emulation_init();
+              tag_helper_load_coll_res_from_block0_with_switch_mode();
+          '''
+          new = '''    // init emulation
+              tag_emulation_init();
+              tag_helper_disable_empty_slots();
+              tag_helper_load_coll_res_from_block0_with_switch_mode();
+          '''
+          if old in text and "tag_helper_disable_empty_slots();" not in text:
+              text = text.replace(old, new)
+          app_c.write_text(text)
+          PY
+
+          grep -n "fds_is_exists" fw/application/src/app/chameleon/port/fds_utils.h
+          grep -n "tag_helper_disable_empty_slots" fw/application/src/app/chameleon/port/tag_helper.c
+          grep -n "tag_helper_disable_empty_slots" fw/application/src/app/chameleon/port/tag_helper.h
+          grep -n "tag_helper_disable_empty_slots" fw/application/src/app/chameleon/app_chameleon.c
+
       - name: Build firmware
         run: cd fw && make all RELEASE=1 APP_VERSION=$GITHUB_RUN_NUMBER BOARD=${{ matrix.board }}
 
