@@ -6,6 +6,7 @@
 #include "settings.h"
 #include "utils2.h"
 #include <string.h>
+#include "tag_emulation.h"
 
 #define NFC_TAG_NTAG_DATA_SIZE 4
 
@@ -187,10 +188,19 @@ void tag_helper_load_coll_res_from_block0_with_switch_mode(void) {
 }
 
     tag_specific_type_t tag_helper_get_active_tag_type() {
-        tag_specific_type_t tag_type[2];
+        tag_slot_specific_type_t tag_types;
         uint8_t slot = tag_emulation_get_slot();
-        tag_emulation_get_specific_types_by_slot(slot, tag_type);
-        return tag_type[0];
+    
+        tag_emulation_get_specific_types_by_slot(slot, &tag_types);
+    
+        if (tag_types.tag_hf == TAG_TYPE_UNDEFINED && tag_emulation_slot_is_enabled(slot, TAG_SENSE_HF)) {
+            tag_emulation_change_type(slot, TAG_TYPE_MIFARE_1024);
+            tag_emulation_factory_data(slot, TAG_TYPE_MIFARE_1024);
+            tag_emulation_save();
+            tag_types.tag_hf = TAG_TYPE_MIFARE_1024;
+        }
+    
+        return tag_types.tag_hf;
     }
 
     void tag_helper_format_uid(char *buff, uint8_t *uid, uint8_t uid_len) {
